@@ -1,0 +1,3 @@
+module SyntaxInFunctions
+
+where
