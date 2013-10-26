@@ -8,6 +8,7 @@ import Lab6
 import Control.Exception
 import Control.Monad
 import Data.Bits
+import Data.Char
 
 import System.Random
 import System.CPUTime
@@ -38,6 +39,14 @@ exMJorryt base expo modulus  = rightToLeftBinary 1 base expo modulus
                                       else result
                           newExponent = shiftR expo 1 -- Bit shift (dev by 2 basically)
                           newBase = mod (base * base) modulus
+
+exMfast :: Integer -> Integer -> Integer -> Integer
+exMfast b e m = exMfast' b e m 1 where
+    exMfast' _ 0 _ r = r
+    exMfast' b e m r 
+        | odd e = exMfast' (b*b `mod` m) (Data.Bits.shiftR e 1) m (r*b `mod` m)
+        | otherwise = exMfast' (b*b `mod` m) (Data.Bits.shiftR e 1) m r
+
 
 --from: http://rosettacode.org/wiki/Modular_exponentiation#Haskell
 powm :: Integer -> Integer -> Integer -> Integer -> Integer
@@ -132,10 +141,12 @@ measureExM s (b:e:m:xs) = do
     --putStr (" exM:" ++ test1)
     testExM' <- timeToString  ((exM' b e m) `seq` return ())
     putStr (" |exM':" ++ testExM')
-    testExMJorryt <- timeToString  ((exMJorryt b e m) `seq` return ())
-    putStr (" |exMJorryt:" ++ testExMJorryt)
-    testPow <- timeToString  ((powm b e m 1) `seq` return ())
-    putStrLn (" |pow:" ++ testPow)
+    testExMFast' <- timeToString  ((exMfast b e m) `seq` return ())
+    putStr (" |exMFast:" ++ testExMFast')
+    --testExMJorryt <- timeToString  ((exMJorryt b e m) `seq` return ())
+    --putStr (" |exMJorryt:" ++ testExMJorryt)
+    --testPow <- timeToString  ((powm b e m 1) `seq` return ())
+    --putStrLn (" |pow:" ++ testPow)
     --if ((read testExM' :: Float) == (read testExMJorryt :: Float)) 
     --then putStrLn " | no winner!"
     --else 
@@ -510,3 +521,24 @@ testMersennes n i = do
 
         These are the same numbers.
 -}
+
+
+-- Code below comes from answer sheets
+str2int :: String -> Integer
+str2int [] = 0
+str2int (c:cs) = shift (toInteger (ord c)) (8 * (length cs)) .|. str2int cs
+
+-- Get the last n bits of an integer x
+lastNBits :: Integer -> Int -> Integer
+lastNBits x n = xor (shiftL (shiftR x n) n) x
+
+int2str :: Integer -> String
+int2str 0 = ""
+int2str x = int2str (shiftR x 8)
+    ++ [chr (fromInteger (lastNBits x 8))]
+
+az=['a'..'h'];
+strings = [ [u,v,w,x,y,z] |
+    u <- az, v <- az, w <- az, x <- az, y <- az, z <- [' ']]
+testString = all (\x -> x == int2str (str2int x)) strings
+ 
